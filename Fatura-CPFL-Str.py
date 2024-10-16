@@ -92,10 +92,16 @@ if st.button("Calcular"):
 if st.button("Exportar Dados"):
     # Lê o histórico existente
     historico_df = ler_historico('historico_consumo_sala_comercial.xlsx')
-    # Cria um arquivo Excel temporário
-    excel_file = 'historico_consumo_temporario.xlsx'
+    
+    # Salva o histórico em um objeto BytesIO para download
+    excel_file = 'historico_consumo_sala_comercial.xlsx'
     salvar_historico(historico_df, excel_file)
-    # Cria o download
-    with open(excel_file, "rb") as file:
-        st.download_button("Baixar Histórico de Consumo", file, file_name=excel_file, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
+    
+    # Cria o botão de download
+    with open(excel_file, "rb") as f:
+        st.download_button(
+            label="Baixar Histórico de Consumo",
+            data=f,
+            file_name=excel_file,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
