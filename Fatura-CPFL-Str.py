@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 from datetime import datetime
 import os
 
@@ -22,7 +23,7 @@ def calcular_consumo(leitura_anterior, leitura_atual, tarifa_te, tarifa_tusd, pa
     dif_kwh = leitura_atual - leitura_anterior
     valor_te = dif_kwh * tarifa_te
     valor_tusd = dif_kwh * tarifa_tusd
-    valor_total = (valor_te + valor_tusd) * 1
+    valor_total = (valor_te + valor_tusd) * parte_salao
     return dif_kwh, valor_te, valor_tusd, valor_total
 
 # Função para salvar o histórico em um arquivo Excel
@@ -34,6 +35,17 @@ def ler_historico(historico_file):
     if os.path.exists(historico_file):
         return pd.read_excel(historico_file)
     return pd.DataFrame(columns=['Data', 'Valor da leitura', 'Dif(kWh)', 'TE Total (R$)', 'TUSD Total (R$)', 'Valor total (R$)'])
+
+# Função para plotar o gráfico de histórico de consumo
+def plotar_grafico(historico_df):
+    plt.figure(figsize=(10, 6))
+    plt.plot(historico_df['Data'], historico_df['Valor total (R$)'], marker='o')
+    plt.title('Histórico de Consumo de Energia')
+    plt.xlabel('Data')
+    plt.ylabel('Valor Total (R$)')
+    plt.xticks(rotation=45)
+    plt.grid()
+    st.pyplot(plt)
 
 # Configurando a interface Streamlit
 st.title("Cálculo de Consumo de Energia - Sala Comercial")
@@ -88,20 +100,20 @@ if st.button("Calcular"):
     # Mensagem de sucesso
     st.success("Cálculo realizado e dados salvos com sucesso!")
 
-# Botão para exportar dados
-if st.button("Exportar Dados"):
-    # Lê o histórico existente
-    historico_df = ler_historico('historico_consumo_sala_comercial.xlsx')
-    
-    # Salva o histórico em um objeto BytesIO para download
-    excel_file = 'historico_consumo_sala_comercial.xlsx'
-    salvar_historico(historico_df, excel_file)
-    
-    # Cria o botão de download
-    with open(excel_file, "rb") as f:
-        st.download_button(
-            label="Baixar Histórico de Consumo",
-            data=f,
-            file_name=excel_file,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    # Plota o gráfico de histórico de consumo
+    plotar_grafico(historico_df)
+
+# Botão para imprimir os dados
+if st.button("Imprimir Dados"):
+    # Cria uma string para impressão
+    dados = f"""
+    Cálculo de Consumo de Energia - Sala Comercial
+    Data: {data_atual}
+    Leitura Anterior: {leitura_anterior:.2f}
+    Leitura Atual: {leitura_atual:.2f}
+    Diferença de kWh: {dif_kwh:.2f}
+    TE Total (R$): {valor_te:.2f}
+    TUSD Total (R$): {valor_tusd:.2f}
+    Valor total (R$): {valor_total:.2f}
+    """
+    st.text_area("Dados para Impressão:", value=dados, height=200)
