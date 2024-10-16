@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
 
 # Função para carregar a última leitura salva de um arquivo
 def carregar_ultima_leitura():
@@ -16,13 +17,23 @@ def salvar_ultima_leitura(leitura_atual):
     with open('ultima_leitura.txt', 'w') as file:
         file.write(str(leitura_atual))
 
-# Função para calcular o consumo e atualizar a tabela
+# Função para calcular o consumo
 def calcular_consumo(leitura_anterior, leitura_atual, tarifa_te, tarifa_tusd, parte_salao):
     dif_kwh = leitura_atual - leitura_anterior
     valor_te = dif_kwh * tarifa_te
     valor_tusd = dif_kwh * tarifa_tusd
-    valor_total = (valor_te + valor_tusd) * 1
+    valor_total = (valor_te + valor_tusd) * parte_salao
     return dif_kwh, valor_te, valor_tusd, valor_total
+
+# Função para salvar o histórico em um arquivo Excel
+def salvar_historico(df, historico_file):
+    df.to_excel(historico_file, index=False)
+
+# Função para ler o histórico do arquivo Excel
+def ler_historico(historico_file):
+    if os.path.exists(historico_file):
+        return pd.read_excel(historico_file)
+    return pd.DataFrame(columns=['Data', 'Valor da leitura', 'Dif(kWh)', 'TE Total (R$)', 'TUSD Total (R$)', 'Valor total (R$)'])
 
 # Configurando a interface Streamlit
 st.title("Cálculo de Consumo de Energia - Sala Comercial")
@@ -65,13 +76,26 @@ if st.button("Calcular"):
         'Valor total (R$)': [valor_total]
     }
     df = pd.DataFrame(novo_dado)
-    try:
-        # Tenta carregar o histórico existente
-        historico_df = pd.read_excel('historico_consumo_sala_comercial.xlsx')
-        historico_df = pd.concat([historico_df, df], ignore_index=True)
-    except FileNotFoundError:
-        # Se o arquivo não existir, cria um novo
-        historico_df = df
 
-    historico_df.to_excel('historico_consumo_sala_comercial.xlsx', index=False)
+    # Lê o histórico existente e atualiza
+    historico_file = 'historico_consumo_sala_comercial.xlsx'
+    historico_df = ler_historico(historico_file)
+    historico_df = pd.concat([historico_df, df], ignore_index=True)
+
+    # Salva o histórico atualizado em um arquivo Excel
+    salvar_historico(historico_df, historico_file)
+
+    # Mensagem de sucesso
     st.success("Cálculo realizado e dados salvos com sucesso!")
+
+# Botão para exportar dados
+if st.button("Exportar Dados"):
+    # Lê o histórico existente
+    historico_df = ler_historico('historico_consumo_sala_comercial.xlsx')
+    # Cria um arquivo Excel temporário
+    excel_file = 'historico_consumo_temporario.xlsx'
+    salvar_historico(historico_df, excel_file)
+    # Cria o download
+    with open(excel_file, "rb") as file:
+        st.download_button("Baixar Histórico de Consumo", file, file_name=excel_file, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
