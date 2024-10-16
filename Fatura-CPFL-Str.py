@@ -22,7 +22,7 @@ def calcular_consumo(leitura_anterior, leitura_atual, tarifa_te, tarifa_tusd, pa
     dif_kwh = leitura_atual - leitura_anterior
     valor_te = dif_kwh * tarifa_te
     valor_tusd = dif_kwh * tarifa_tusd
-    valor_total = (valor_te + valor_tusd) * parte_salao
+    valor_total = (valor_te + valor_tusd) * 1
     return dif_kwh, valor_te, valor_tusd, valor_total
 
 # Função para salvar o histórico em um arquivo Excel
